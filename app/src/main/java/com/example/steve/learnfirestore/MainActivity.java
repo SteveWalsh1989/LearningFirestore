@@ -18,6 +18,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText client_name_input;
     private  EditText client_email_input;
+    private  EditText filter_input;
+
     private TextView data_view;
 
     // fire store
@@ -55,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         // initialise text views
         client_name_input = findViewById(R.id.title_input);
         client_email_input = findViewById(R.id.description_input);
+        filter_input = findViewById(R.id.filter_input);
         data_view = findViewById(R.id.data_view);
 
     }
@@ -127,11 +131,20 @@ public class MainActivity extends AppCompatActivity {
         String client_name  = client_name_input.getText().toString();
         String client_email = client_email_input.getText().toString();
 
-        // create new client
-        client client = new client(client_name, client_email);
 
-        Log.d("\n\nclient Name", client.getName());
-        Log.d("\n\nclient Email", client.getEmail());
+        // checks if there was anything in field first
+        if (filter_input.length() == 0 ) {
+            filter_input.setText("0");
+
+        }
+
+        // gets value from filter input and parses to int
+        int filter = Integer.parseInt(filter_input.getText().toString());
+
+
+        // create new client
+        client client = new client(client_name, client_email, filter);
+
 
 
         // add client to collection - could also add onCSuccessLister like saveClient
@@ -143,7 +156,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadClients(View view){
 
-        clietListRef.get()
+        clietListRef.whereGreaterThanOrEqualTo("filter", 2)
+                .orderBy("filter",Query.Direction.DESCENDING)
+                .limit(3)
+                .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot querySnapshot) {
@@ -159,8 +175,11 @@ public class MainActivity extends AppCompatActivity {
 
                             String name = client.getName();
                             String email = client.getEmail();
+                            String documentID = client.getDocumentID();
+                            int filter = client.getFilter();
 
-                            data += "Name: " + name + "\n" + "Email: " + email + "\n\n";
+                            data += "Name: " + name      + "\n" + "Email: " + email + "\n" +
+                                    "ID: "   + documentID +"\n" +"Filter: " + filter + "\n\n";
 
                         }
 

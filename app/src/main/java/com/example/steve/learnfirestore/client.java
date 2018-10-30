@@ -5,6 +5,9 @@ public class client {
     private String documentID;
     private String name;
     private String email;
+    private int filter;
+
+
 
 
     // public constructor needed for firestore
@@ -16,7 +19,11 @@ public class client {
         this.email = email;
     }
 
-
+    public client(String client_name, String client_email, int filter) {
+        this.name = client_name;
+        this.email = client_email;
+        this.filter = filter;
+    }
 
 
     public String getName() {
@@ -41,5 +48,13 @@ public class client {
 
     public void setDocumentID(String documentID) {
         this.documentID = documentID;
+    }
+
+    public int getFilter() {
+        return filter;
+    }
+
+    public void setFilter(int filter) {
+        this.filter = filter;
     }
 }
