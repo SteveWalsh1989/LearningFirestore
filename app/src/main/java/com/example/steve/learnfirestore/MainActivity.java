@@ -8,6 +8,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.common.api.Api;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
@@ -27,19 +29,19 @@ public class MainActivity extends AppCompatActivity {
     // Log message tag
     private static final String TAG = "MainActivity";
 
-    private static final String KEY_TITLE       = "title";
-    private static final String KEY_DESCRIPTION ="description";
+    private static final String KEY_NAME  = "name";
+    private static final String KEY_EMAIL ="email";
 
 
-    private EditText title_input;
-    private  EditText description_input;
+    private EditText client_name_input;
+    private  EditText client_email_input;
     private TextView data_view;
 
     // fire store
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     // used in loadNote
-    private DocumentReference noteRef = db.collection("Notebook").document("First note");
+    private DocumentReference clientRef = db.collection("Notebook").document("SampleClient");
 
 
     @Override
@@ -48,8 +50,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // initialise text views
-        title_input = findViewById(R.id.title_input);
-        description_input = findViewById(R.id.description_input);
+        client_name_input = findViewById(R.id.title_input);
+        client_email_input = findViewById(R.id.description_input);
         data_view = findViewById(R.id.data_view);
 
     }
@@ -60,15 +62,15 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         // adds real time checks to firebase for data_view
-        noteRef.addSnapshotListener(this, new EventListener<DocumentSnapshot>() {
+        clientRef.addSnapshotListener(this, new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
                 // 1: check if document exists
                 if(documentSnapshot.exists()){
 
                     // get values from document directly using its field name
-                    String title       = documentSnapshot.getString(KEY_TITLE);
-                    String description = documentSnapshot.getString(KEY_DESCRIPTION);
+                    String title       = documentSnapshot.getString(KEY_NAME);
+                    String description = documentSnapshot.getString(KEY_EMAIL);
 
                     // add data to data_view on screen
                     data_view.setText("Title: " + title + " \n " + "Description: " + description);
@@ -81,34 +83,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Called when save button is selected
-    public void saveNote(View view) {
+    public void saveClient(View view) {
 
         // variable to get data from activity
-        String title       = title_input.getText().toString();
-        String desctiption = description_input.getText().toString();
+        String client_name  = client_name_input.getText().toString();
+        String client_email = client_email_input.getText().toString();
 
-        // map to hold data
-        Map<String, Object> note = new HashMap<>();
-        note.put(KEY_TITLE, title);
-        note.put(KEY_DESCRIPTION,desctiption);
+        // create new client
+        client client = new client(client_name,client_email );
 
-        // save to database
-        noteRef.set(note)
+        // save client to database
+        clientRef.set(client)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
                         Log.d(TAG, "onSuccess");
-                        Toast.makeText(MainActivity.this, "Note Saved", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
 
-
                         Log.d(TAG, "onFailure");
-                        Toast.makeText(MainActivity.this,"Note Failed to Save", Toast.LENGTH_SHORT).show();
-
 
                     }
                 });
@@ -117,9 +113,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     // get from database
-    public void loadNote(View view){
+    public void loadClient(View view){
 
-        noteRef.get()
+        clientRef.get()
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
@@ -127,12 +123,11 @@ public class MainActivity extends AppCompatActivity {
                         // 1: check if document exists
                         if(documentSnapshot.exists()){
 
-                            // get values from document directly using its field name
-                            String title = documentSnapshot.getString(KEY_TITLE);
-                            String description = documentSnapshot.getString(KEY_DESCRIPTION);
+                           // saves document to client object
+                           client client = documentSnapshot.toObject(client.class);
 
                             // add data to data_view on screen
-                            data_view.setText("Title: " + title + " \n " + "Description: " + description);
+                            data_view.setText("Name: " + client.getName() + " \n " + "Email: " + client.getEmail());
                         } else {
 
                             // if document does not exist
@@ -154,23 +149,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // updates single field of document without overriding other fields
-    public void updateDescription(View view) {
+    public void updateEmail(View view) {
 
         // get description from view
-        String description = description_input.getText().toString();
-
-        // create map to store description in note
-        Map<String, Object> note = new HashMap<>();
-        note.put(KEY_DESCRIPTION,description);
-
-        // merges document rather than overriding as blank title field
-        noteRef.set(note, SetOptions.merge());
-
-        // alternative method using update
-        // noteRef.update(note);
+        String client_email = client_email_input.getText().toString();
 
         // alternative method using update without hashmap
-        // noteRef.update(KEY_DESCRIPTION, description);
+        clientRef.update(KEY_EMAIL, client_email);
 
 
 
