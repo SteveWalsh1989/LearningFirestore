@@ -12,11 +12,14 @@ import android.widget.Toast;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
@@ -42,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
     // used in loadNote
     private DocumentReference clientRef = db.collection("Notebook").document("SampleClient");
-
+    private CollectionReference clietListRef = db.collection("Notebook");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,24 +65,31 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         // adds real time checks to firebase for data_view
-        clientRef.addSnapshotListener(this, new EventListener<DocumentSnapshot>() {
+        clietListRef.addSnapshotListener(this, new EventListener<QuerySnapshot>() {
             @Override
-            public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
-                // 1: check if document exists
-                if(documentSnapshot.exists()){
+            public void onEvent(@Nullable QuerySnapshot querySnapshot, @Nullable FirebaseFirestoreException e) {
 
-                    // get values from document directly using its field name
-                    String title       = documentSnapshot.getString(KEY_NAME);
-                    String description = documentSnapshot.getString(KEY_EMAIL);
+                String data = "";
 
-                    // add data to data_view on screen
-                    data_view.setText("Title: " + title + " \n " + "Description: " + description);
+                // for each document in the collection
+                for (QueryDocumentSnapshot documentSnapshot : querySnapshot) {
+
+                    // create client from document
+                    client client = documentSnapshot.toObject(client.class);
+
+                    // set client document based on the document ID
+                    client.setDocumentID(documentSnapshot.getId());
+
+                    String documentId = client.getDocumentID();
+                    String name = client.getName();
+                    String email = client.getEmail();
+
+                    data += "\nID: " + documentId + "\nName: " + name + "\nEmail: " + email + "\n\n";
                 }
+
+                data_view.setText(data);
             }
-        });
-
-
-
+       });
     }
 
     // Called when save button is selected
@@ -108,6 +118,64 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+
+    }
+
+
+    public void saveClient_usingCollection(View view) {
+        // variable to get data from activity
+        String client_name  = client_name_input.getText().toString();
+        String client_email = client_email_input.getText().toString();
+
+        // create new client
+        client client = new client(client_name, client_email);
+
+        Log.d("\n\nclient Name", client.getName());
+        Log.d("\n\nclient Email", client.getEmail());
+
+
+        // add client to collection - could also add onCSuccessLister like saveClient
+        clietListRef.add(client);
+    }
+
+
+
+
+    public void loadClients(View view){
+
+        clietListRef.get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot querySnapshot) {
+
+                        // string to store all client data
+                        String data = "";
+
+                        // loop through each document from returned query
+                        for(QueryDocumentSnapshot documentSnapshots : querySnapshot) {
+
+
+                            client client = documentSnapshots.toObject(client.class);
+
+                            String name = client.getName();
+                            String email = client.getEmail();
+
+                            data += "Name: " + name + "\n" + "Email: " + email + "\n\n";
+
+                        }
+
+                        // add data to textview
+                        data_view.setText(data);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(MainActivity.this,"Note Failed to load", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+
 
     }
 

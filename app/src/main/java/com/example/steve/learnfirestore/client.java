@@ -2,7 +2,7 @@ package com.example.steve.learnfirestore;
 
 public class client {
 
-
+    private String documentID;
     private String name;
     private String email;
 
@@ -33,5 +33,13 @@ public class client {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getDocumentID() {
+        return documentID;
+    }
+
+    public void setDocumentID(String documentID) {
+        this.documentID = documentID;
     }
 }
