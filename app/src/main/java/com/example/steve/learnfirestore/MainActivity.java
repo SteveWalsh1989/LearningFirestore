@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 data_view.setText(data);
             }
        });
+
     }
 
     // Called when save button is selected
